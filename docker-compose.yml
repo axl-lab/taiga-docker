@@ -25,8 +25,8 @@ x-environment:
   # Rabbitmq settings
   RABBITMQ_USER: "${RABBITMQ_USER}"
   RABBITMQ_PASS: "${RABBITMQ_PASS}"
-  EVENTS_PUSH_BACKEND_URL: "null"
-  CELERY_BROKER_URL: "null"
+  # EVENTS_PUSH_BACKEND_URL: "null"
+  # CELERY_BROKER_URL: "null"
   # Telemetry settings
   ENABLE_TELEMETRY: "${ENABLE_TELEMETRY}"
   # ...your customizations go here
