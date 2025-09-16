@@ -1,0 +1,228 @@
+name: taiga
+
+# Managed database
+databases:
+  - name: taiga-db
+    engine: PG
+    version: "12"
+    production: false
+    cluster_name: taiga-cluster
+    db_name: taiga
+    db_user: taiga
+
+services:
+  # RabbitMQ for Events
+  - name: taiga-events-rabbitmq
+    image:
+      registry_type: DOCKER_HUB
+      registry: rabbitmq
+      tag: "3.8-management-alpine"
+    environment_slug: basic-xxs
+    instance_count: 1
+    envs:
+      - key: RABBITMQ_ERLANG_COOKIE
+        value: "secret-erlang-cookie"
+        type: SECRET
+      - key: RABBITMQ_DEFAULT_USER
+        value: "taiga"
+      - key: RABBITMQ_DEFAULT_PASS
+        value: "taiga"
+        type: SECRET
+      - key: RABBITMQ_DEFAULT_VHOST
+        value: "taiga"
+
+  # RabbitMQ for Async
+  - name: taiga-async-rabbitmq
+    image:
+      registry_type: DOCKER_HUB
+      registry: rabbitmq
+      tag: "3.8-management-alpine"
+    environment_slug: basic-xxs
+    instance_count: 1
+    envs:
+      - key: RABBITMQ_ERLANG_COOKIE
+        value: "secret-erlang-cookie"
+        type: SECRET
+      - key: RABBITMQ_DEFAULT_USER
+        value: "taiga"
+      - key: RABBITMQ_DEFAULT_PASS
+        value: "taiga"
+        type: SECRET
+      - key: RABBITMQ_DEFAULT_VHOST
+        value: "taiga"
+
+  # Taiga Backend
+  - name: taiga-back
+    image:
+      registry_type: DOCKER_HUB
+      registry: taigaio/taiga-back
+      tag: latest
+    environment_slug: basic-xs
+    instance_count: 1
+    envs:
+      # Database settings (managed database)
+      - key: POSTGRES_DB
+        value: "taiga"
+      - key: POSTGRES_USER
+        value: "taiga"
+      - key: POSTGRES_PASSWORD
+        scope: RUN_AND_BUILD_TIME
+        type: SECRET
+      - key: POSTGRES_HOST
+        scope: RUN_AND_BUILD_TIME
+        type: SECRET
+      # Taiga settings
+      - key: TAIGA_SECRET_KEY
+        value: "change-this-to-a-secure-random-string"
+        type: SECRET
+      - key: TAIGA_SITES_SCHEME
+        value: "https"
+      - key: TAIGA_SITES_DOMAIN
+        value: "${APP_DOMAIN}"
+      - key: TAIGA_SUBPATH
+        value: ""
+      # Email settings
+      - key: EMAIL_BACKEND
+        value: "django.core.mail.backends.console.EmailBackend"
+      - key: DEFAULT_FROM_EMAIL
+        value: "changeme@example.com"
+      - key: EMAIL_USE_TLS
+        value: "True"
+      - key: EMAIL_USE_SSL
+        value: "False"
+      - key: EMAIL_HOST
+        value: "smtp.host.example.com"
+      - key: EMAIL_PORT
+        value: "587"
+      - key: EMAIL_HOST_USER
+        value: "user"
+      - key: EMAIL_HOST_PASSWORD
+        value: "password"
+        type: SECRET
+      # Rabbitmq settings
+      - key: RABBITMQ_USER
+        value: "taiga"
+      - key: RABBITMQ_PASS
+        value: "taiga"
+        type: SECRET
+      # Telemetry settings
+      - key: ENABLE_TELEMETRY
+        value: "True"
+
+  # Taiga Async
+  - name: taiga-async
+    image:
+      registry_type: DOCKER_HUB
+      registry: taigaio/taiga-back
+      tag: latest
+    environment_slug: basic-xs
+    instance_count: 1
+    run_command: "/taiga-back/docker/async_entrypoint.sh"
+    envs:
+      # Same environment as taiga-back
+      - key: POSTGRES_DB
+        value: "taiga"
+      - key: POSTGRES_USER
+        value: "taiga"
+      - key: POSTGRES_PASSWORD
+        scope: RUN_AND_BUILD_TIME
+        type: SECRET
+      - key: POSTGRES_HOST
+        scope: RUN_AND_BUILD_TIME
+        type: SECRET
+      - key: TAIGA_SECRET_KEY
+        value: "change-this-to-a-secure-random-string"
+        type: SECRET
+      - key: TAIGA_SITES_SCHEME
+        value: "https"
+      - key: TAIGA_SITES_DOMAIN
+        value: "${APP_DOMAIN}"
+      - key: TAIGA_SUBPATH
+        value: ""
+      - key: EMAIL_BACKEND
+        value: "django.core.mail.backends.console.EmailBackend"
+      - key: DEFAULT_FROM_EMAIL
+        value: "changeme@example.com"
+      - key: EMAIL_USE_TLS
+        value: "True"
+      - key: EMAIL_USE_SSL
+        value: "False"
+      - key: EMAIL_HOST
+        value: "smtp.host.example.com"
+      - key: EMAIL_PORT
+        value: "587"
+      - key: EMAIL_HOST_USER
+        value: "user"
+      - key: EMAIL_HOST_PASSWORD
+        value: "password"
+        type: SECRET
+      - key: RABBITMQ_USER
+        value: "taiga"
+      - key: RABBITMQ_PASS
+        value: "taiga"
+        type: SECRET
+      - key: ENABLE_TELEMETRY
+        value: "True"
+
+  # Taiga Frontend
+  - name: taiga-front
+    image:
+      registry_type: DOCKER_HUB
+      registry: taigaio/taiga-front
+      tag: latest
+    environment_slug: basic-xs
+    instance_count: 1
+    envs:
+      - key: TAIGA_URL
+        value: "https://${APP_DOMAIN}"
+      - key: TAIGA_WEBSOCKETS_URL
+        value: "wss://${APP_DOMAIN}"
+      - key: TAIGA_SUBPATH
+        value: ""
+
+  # Taiga Events
+  - name: taiga-events
+    image:
+      registry_type: DOCKER_HUB
+      registry: taigaio/taiga-events
+      tag: latest
+    environment_slug: basic-xs
+    instance_count: 1
+    envs:
+      - key: RABBITMQ_USER
+        value: "taiga"
+      - key: RABBITMQ_PASS
+        value: "taiga"
+        type: SECRET
+      - key: TAIGA_SECRET_KEY
+        value: "change-this-to-a-secure-random-string"
+        type: SECRET
+
+  # Taiga Protected
+  - name: taiga-protected
+    image:
+      registry_type: DOCKER_HUB
+      registry: taigaio/taiga-protected
+      tag: latest
+    environment_slug: basic-xs
+    instance_count: 1
+    envs:
+      - key: MAX_AGE
+        value: "360"
+      - key: SECRET_KEY
+        value: "change-this-to-a-secure-random-string"
+        type: SECRET
+
+  # Taiga Gateway (Nginx) - Public facing service
+  - name: taiga-gateway
+    source_dir: /
+    github:
+      repo: hadzo/taiga-docker
+      branch: main
+      deploy_on_push: true
+    dockerfile_path: Dockerfile
+    routes:
+      - path: /
+    environment_slug: basic-xs
+    instance_count: 1
+    http_port: 80
