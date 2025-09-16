@@ -25,8 +25,8 @@ x-environment:
   # Rabbitmq settings
   RABBITMQ_USER: "${RABBITMQ_USER}"
   RABBITMQ_PASS: "${RABBITMQ_PASS}"
-  EVENTS_PUSH_BACKEND_URL: "amqp://taiga:taiga@taiga-events-rabbitmq:5672/taiga"
-  CELERY_BROKER_URL: "amqp://taiga:taiga@taiga-events-rabbitmq:5672/taiga"
+  EVENTS_PUSH_BACKEND_URL: "null"
+  CELERY_BROKER_URL: "null"
   # Telemetry settings
   ENABLE_TELEMETRY: "${ENABLE_TELEMETRY}"
   # ...your customizations go here
@@ -65,21 +65,19 @@ services:
     depends_on:
       taiga-db:
         condition: service_healthy
-      taiga-events-rabbitmq:
-        condition: service_started
+      # taiga-events-rabbitmq:
+      #   condition: service_started
 
-  taiga-async:
-    image: taigaio/taiga-back:latest
-    entrypoint: ["/taiga-back/docker/async_entrypoint.sh"]
-    environment: *default-back-environment
-    volumes: *default-back-volumes
-    networks:
-      - taiga
-    depends_on:
-      taiga-db:
-        condition: service_healthy
-      taiga-events-rabbitmq:
-        condition: service_started
+  # taiga-async:
+  #   image: taigaio/taiga-back:latest
+  #   entrypoint: ["/taiga-back/docker/async_entrypoint.sh"]
+  #   environment: *default-back-environment
+  #   volumes: *default-back-volumes
+  #   networks:
+  #     - taiga
+  #   depends_on:
+  #     taiga-db:
+  #       condition: service_healthy
 
   # taiga-async-rabbitmq:
   #   image: rabbitmq:3.8-management-alpine
@@ -106,30 +104,30 @@ services:
     # volumes:
     #   - ./conf.json:/usr/share/nginx/html/conf.json
 
-  taiga-events:
-    image: taigaio/taiga-events:latest
-    environment:
-      RABBITMQ_USER: "${RABBITMQ_USER}"
-      RABBITMQ_PASS: "${RABBITMQ_PASS}"
-      TAIGA_SECRET_KEY: "${SECRET_KEY}"
-    networks:
-      - taiga
-    depends_on:
-      taiga-events-rabbitmq:
-        condition: service_started
+  # taiga-events:
+  #   image: taigaio/taiga-events:latest
+  #   environment:
+  #     RABBITMQ_USER: "${RABBITMQ_USER}"
+  #     RABBITMQ_PASS: "${RABBITMQ_PASS}"
+  #     TAIGA_SECRET_KEY: "${SECRET_KEY}"
+  #   networks:
+  #     - taiga
+  #   # depends_on:
+  #   #   taiga-events-rabbitmq:
+  #   #     condition: service_started
 
-  taiga-events-rabbitmq:
-    image: rabbitmq:3.8-management-alpine
-    environment:
-      RABBITMQ_ERLANG_COOKIE: "${RABBITMQ_ERLANG_COOKIE}"
-      RABBITMQ_DEFAULT_USER: "${RABBITMQ_USER}"
-      RABBITMQ_DEFAULT_PASS: "${RABBITMQ_PASS}"
-      RABBITMQ_DEFAULT_VHOST: "${RABBITMQ_VHOST}"
-    hostname: "taiga-events-rabbitmq"
-    volumes:
-      - taiga-events-rabbitmq-data:/var/lib/rabbitmq
-    networks:
-      - taiga
+  # taiga-events-rabbitmq:
+  #   image: rabbitmq:3.8-management-alpine
+  #   environment:
+  #     RABBITMQ_ERLANG_COOKIE: "${RABBITMQ_ERLANG_COOKIE}"
+  #     RABBITMQ_DEFAULT_USER: "${RABBITMQ_USER}"
+  #     RABBITMQ_DEFAULT_PASS: "${RABBITMQ_PASS}"
+  #     RABBITMQ_DEFAULT_VHOST: "${RABBITMQ_VHOST}"
+  #   hostname: "taiga-events-rabbitmq"
+  #   volumes:
+  #     - taiga-events-rabbitmq-data:/var/lib/rabbitmq
+  #   networks:
+  #     - taiga
 
   taiga-protected:
     image: taigaio/taiga-protected:latest
@@ -152,13 +150,12 @@ services:
     depends_on:
       - taiga-front
       - taiga-back
-      - taiga-events
+      # - taiga-events
 
 volumes:
   taiga-static-data:
   taiga-media-data:
   taiga-db-data:
-  taiga-events-rabbitmq-data:
 
 networks:
   taiga:
